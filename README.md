@@ -75,3 +75,41 @@ with the narration.
 
 > Pace is a made-up product used for this ad. Swap the copy, colours (`kit.py`
 > top) and voice-over clips (`assets/vo/`) to reuse the template for a real product.
+
+---
+
+## Screen-recording style version (v3)
+
+`out/Pace-screenrec-BANGLA-v1.mp4` — 1:50, 1080p, built around a supplied
+Bangla voice-over (`assets/vo_user/user_vo.mp3`).
+
+It looks like someone is driving the real product:
+
+| Time | Screen | What happens |
+|------|--------|--------------|
+| 0:00–0:12 | Dashboard | KPI tiles count up, line charts draw, flow table fills in, cursor clicks through, activity feed + next-run card |
+| 0:12–0:22 | Flow builder | 5 nodes pop in, elbow connectors draw, a pulse travels the chain, status sidebar, run-history table |
+| 0:22–0:27 | Integrations | app grid pops in, 4 connected, toast slides in |
+| 0:27–0:37 | Reports | bars grow, summary rows land, PDF export, weekly schedule |
+| 0:37–0:50 | Team | member rows, role chips, toggles, invite row |
+| 0:50–1:04 | Social proof | 45,000+ / 32 / 4.8 / 99.9% counters + testimonial |
+| 1:04–1:17 | 3 steps | sign up → connect → switch on, progress bars |
+| 1:17–1:50 | CTA | logo lockup, button, `pace.com.bd` |
+
+**Motion**: every screen has a slow eased camera push/pan (`ui.camera`), staged
+reveals, self-drawing connectors, counting numbers, a moving/clicking cursor with
+click ripples, and Bangla caption pills that change on the narration beats.
+
+**Audio**: the user's own voice-over, loudness-normalised to −16 LUFS with a
+quiet procedural music bed underneath (auto-faded at the end).
+
+Re-render:
+
+```bash
+python3 video/render_rec.py --vo assets/vo_user/user_vo.mp3 \
+    --out out/Pace-screenrec-BANGLA-v1.mp4 [--preview stills]
+```
+
+Scene/caption timing lives in `SCENE_PLAN` at the top of `video/render_rec.py`;
+UI pieces (window chrome, sidebar, table, toggle, cursor, camera) are in
+`video/ui.py`; the screens themselves are in `video/scenes_rec.py`.

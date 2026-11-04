@@ -6,9 +6,10 @@ correct Bengali advances *and* per-word animation.
 """
 from __future__ import annotations
 
-import os
+import json
 import math
 import functools
+import os
 
 import uharfbuzz as hb
 
@@ -166,15 +167,44 @@ def _plain_text_svg(word, size, weight):
             'fill="#fff">%s</text>' % (_INK_PAD, _INK_TOP, fam, size, weight, esc(word)))
 
 
-@functools.lru_cache(maxsize=6000)
-def ink(word: str, size: float, weight: int):
-    """left/right ink extent of a word, relative to a pen at x=0."""
+_INK_DISK = os.path.join(ROOT, "assets", "cache", "ink.json")
+_INK_MEM = {}
+_INK_DIRTY = [0]
+
+
+def _load_ink_disk():
+    if _INK_MEM:
+        return
+    try:
+        with open(_INK_DISK) as f:
+            _INK_MEM.update(json.load(f))
+    except Exception:
+        pass
+
+
+def _flush_ink_disk():
+    if not _INK_DIRTY[0]:
+        return
+    os.makedirs(os.path.dirname(_INK_DISK), exist_ok=True)
+    with open(_INK_DISK, "w") as f:
+        json.dump(_INK_MEM, f)
+    _INK_DIRTY[0] = 0
+
+
+@functools.lru_cache(maxsize=20000)
+def _ink_at100(word: str, weight: int):
+    """ink extents measured once at 100px; scales linearly with font size."""
     import io
     import resvg_py
     from PIL import Image
     if not word:
         return (0.0, 0.0)
-    body = _plain_text_svg(word, size, weight)
+    _load_ink_disk()
+    key = "%s|%d" % (word, weight)
+    hit = _INK_MEM.get(key)
+    if hit is not None:
+        return (float(hit[0]), float(hit[1]))
+    body = _plain_text_svg(word, 100.0, weight)
     svg = svg_doc(rect(0, 0, _INK_PAD * 2, _INK_TOP + 300, "#000000") + body)
     png = resvg_py.svg_to_bytes(svg_string=svg, font_files=_font_list(),
                                 skip_system_fonts=True)
@@ -183,7 +213,21 @@ def ink(word: str, size: float, weight: int):
     if not box:
         return (0.0, 0.0)
     l, _, r, _ = box
-    return (float(l - _INK_PAD), float(r - _INK_PAD))
+    val = (float(round(l - _INK_PAD, 2)), float(round(r - _INK_PAD, 2)))
+    _INK_MEM[key] = val
+    _INK_DIRTY[0] += 1
+    if _INK_DIRTY[0] % 40 == 0:
+        _flush_ink_disk()
+    return val
+
+
+def ink(word: str, size: float, weight: int):
+    """left/right ink extent of a word, relative to a pen at x=0."""
+    if not word:
+        return (0.0, 0.0)
+    l, r = _ink_at100(word, min([400, 500, 600, 700, 800, 900], key=lambda x: abs(x - weight)))
+    k = size / 100.0
+    return (l * k, r * k)
 
 
 def _font_list():
