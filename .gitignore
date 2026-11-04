@@ -1,4 +1,4 @@
 __pycache__/
 *.pyc
 assets/sprites/
-out/*.mp4
+# out/*.mp4 is committed on purpose: it is the deliverable for this branch
