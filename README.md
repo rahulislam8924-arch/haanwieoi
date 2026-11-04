@@ -113,3 +113,17 @@ python3 video/render_rec.py --vo assets/vo_user/user_vo.mp3 \
 Scene/caption timing lives in `SCENE_PLAN` at the top of `video/render_rec.py`;
 UI pieces (window chrome, sidebar, table, toggle, cursor, camera) are in
 `video/ui.py`; the screens themselves are in `video/scenes_rec.py`.
+
+### Player for the deliverables
+
+`players/serve.py` is a small static server with real HTTP Range support (so
+seeking in the browser works) that only exposes `players/index.html` plus the
+mp4s listed in `out/`:
+
+```bash
+python3 players/serve.py --port 8100    # http://0.0.0.0:8100
+```
+
+The page has two tabs (screen-recording version + motion-graphics v2) and a
+download link for each. Unlike the old `/tmp/player*` folders it lives in the
+repo, so it survives `/tmp` being cleared between sessions.

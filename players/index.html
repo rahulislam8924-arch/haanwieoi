@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="bn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<title>Pace — ভিডিও (স্ক্রিন রেকর্ডিং + v2)</title>
+<style>
+  :root{--mint:#3DDC97;--ink:#F4F7FB;--mut:#7d8ca6;--panel:#0C1424;--line:#1B2A44}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#05070D;color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif}
+  body{display:flex;flex-direction:column;align-items:center;gap:16px;padding:20px 18px 34px}
+  .tag{font-size:13.5px;color:#04121C;background:var(--mint);padding:7px 16px;border-radius:999px;font-weight:700}
+  h1{font-size:19px;margin:0;font-weight:700;text-align:center}
+  .meta{font-size:12.5px;color:var(--mut);margin:0;text-align:center}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .tabs button{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    padding:9px 18px;border-radius:999px;font-size:13.5px;font-family:inherit;transition:.18s}
+  .tabs button:hover{border-color:#2b4a76}
+  .tabs button[aria-pressed="true"]{background:rgba(61,220,151,.14);border-color:var(--mint);color:var(--mint);font-weight:700}
+  video{width:min(1180px,100%);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.65);background:#000}
+  .links{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:14px}
+  a{color:var(--mint);text-decoration:none;border-bottom:1px dotted #2a7d5f}
+  p.note{margin:0;font-size:12.5px;color:var(--mut);text-align:center;max-width:760px;line-height:1.65}
+  .file{font-family:ui-monospace,monospace;font-size:12px;color:#93A2BC;margin:0;text-align:center}
+  .err{display:none;background:#2a1220;border:1px solid #6b2740;color:#ffb3c6;padding:10px 16px;
+    border-radius:10px;font-size:12.5px;max-width:760px;text-align:center}
+</style></head>
+<body>
+  <div class="tag">Pace · ভিডিও প্লেয়ার</div>
+  <div class="tabs" id="tabs">
+    <button data-key="rec" aria-pressed="true">স্ক্রিন রেকর্ডিং স্টাইল · 1:50</button>
+    <button data-key="v2" aria-pressed="false">মোশন গ্রাফিক্স v2 · 1:02</button>
+  </div>
+  <video id="v" controls autoplay playsinline preload="metadata"></video>
+  <h1 id="title"></h1>
+  <p class="meta" id="meta"></p>
+  <div class="links"><a id="dl" download>⤓ ডাউনলোড (MP4)</a></div>
+  <p class="err" id="err">ভিডিও লোড হয়নি। পেজ রিফ্রেশ করুন, অথবা নিচের লিংকে সরাসরি খুলুন।</p>
+  <p class="file" id="file"></p>
+
+<script>
+const CLIPS = {
+  rec: {src:"Pace-screenrec-BANGLA-v1.mp4", q:"?v=1",
+        title:"Pace — স্ক্রিন রেকর্ডিং স্টাইল (আপনার ভয়েসওভার)",
+        meta:"১:৫০ · 1080p · ৩০ fps · বাংলা ক্যাপশন · ড্যাশবোর্ড → ফ্লো → রিপোর্ট → টিম → CTA",
+        size:"24 MB", file:"out/Pace-screenrec-BANGLA-v1.mp4"},
+  v2:  {src:"Pace-promo-BANGLA-new-v2.mp4", q:"?v=2",
+        title:"Pace — মোশন গ্রাফিক্স ভার্সন v2",
+        meta:"১:০২ · 1080p · ৩০ fps · বাংলা ভয়েসওভার",
+        size:"8.6 MB", file:"out/Pace-promo-BANGLA-new-v2.mp4"}
+};
+const v = document.getElementById('v'), tabs = document.getElementById('tabs');
+function show(key){
+  const c = CLIPS[key];
+  [...tabs.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.key === key)));
+  v.src = c.src + c.q; v.load();
+  const p = v.play(); if (p && p.catch) p.catch(()=>{});
+  document.getElementById('title').textContent = c.title;
+  document.getElementById('meta').textContent = c.meta;
+  document.getElementById('file').textContent = 'ফাইল: ' + c.file;
+  const dl = document.getElementById('dl');
+  dl.href = c.src + c.q; dl.setAttribute('download', c.src);
+  dl.textContent = '⤓ ডাউনলোড (MP4 · ' + c.size + ')';
+  document.getElementById('err').style.display = 'none';
+  history.replaceState(null, '', '#' + key);
+}
+tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(b.dataset.key); });
+v.addEventListener('error', () => { document.getElementById('err').style.display = 'block'; });
+show(location.hash === '#v2' ? 'v2' : 'rec');
+</script>
+</body></html>
