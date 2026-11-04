@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+assets/sprites/
+out/*.mp4
