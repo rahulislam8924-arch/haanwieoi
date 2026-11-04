@@ -135,7 +135,7 @@ def render_frame(args):
             local = t_global - sc["start"]
             shot = sc["fn"](local, sc["dur"])
             fg = Image.open(io.BytesIO(render_svg(shot["svg"]))).convert("RGBA")
-            canvas = plate().copy() if idx > 0 else Image.new("RGB", (1920, 1080), kit.BG_0)
+            canvas = plate().copy()
             canvas = canvas.convert("RGBA")
             canvas.alpha_composite(fg)
             o = shot["opacity"]

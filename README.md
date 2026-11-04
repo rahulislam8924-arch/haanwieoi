@@ -19,6 +19,25 @@ rendered to MP4 with a Bangla voice-over.
 
 Full script with timings: [`video/script_bn.md`](video/script_bn.md)
 
+## Motion & visual design
+
+* **Gradient typography** — headlines and key numbers are filled with an animated
+  mint→cyan or white→mint gradient band instead of flat colour.
+* **Counting numbers** — ১০+, ১২ ঘণ্টা, ৪৫,০০০, ৯০% and ৯৯.৯% all count up on entry
+  (Bangla numerals with thousands separators).
+* **Staggered reveals** — every headline arrives word by word with an expo ease and
+  a soft rise; cards pop in with a spring overshoot and a slight scale tilt.
+* **Living background** — drifting particles, out-of-focus bokeh rings, a faint dot
+  grid and slow expanding pulse rings behind the logo.
+* **Comet sweep** — a light pulse travels along the flow diagram in "how it works"
+  and across the flow strip, so the eye follows the process.
+* **Animated arrow + underline** — the ১২ ঘণ্টা → ১ ঘণ্টা arrow draws itself; key
+  phrases get a sweeping glow underline; the strikethrough on কপি-পেস্ট snaps in.
+* **Brand furniture** — a thin mint accent line with a progress bar sits on top of
+  every frame, so the whole spot reads as one piece.
+* **Beat-synced edits** — each segment lands on the voice-over (0.55s lead-in,
+  0.75s tail), with a 0.3s dip-to-black on the cuts.
+
 ## How it's built
 
 No After Effects, no browser — a small Python render pipeline:
@@ -46,7 +65,7 @@ ink it draws. So:
 
 ```bash
 pip install pillow numpy imageio-ffmpeg uharfbuzz fonttools brotli resvg-py
-python3 video/render.py --out out/pace-promo-bn.mp4          # full render (~6 min, 2 cores)
+python3 video/render.py --out out/pace-promo-bn.mp4          # full render (~12 min, 2 cores)
 python3 video/render.py --preview stills                     # quick PNG stills per scene
 ```
 

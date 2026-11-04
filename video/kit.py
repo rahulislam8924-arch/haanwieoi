@@ -595,3 +595,238 @@ def background_fast(t, drift=1.0):
     by = 560 + math.sin(t * 0.29 * drift + 0.4) * 200
     out.append(image("glow_violet.png", bx, by, 860, 860, 0.32))
     return "".join(out)
+
+
+# ------------------------------------------------------------- fx / motion --
+def ease_out_expo(t):
+    t = clamp(t)
+    return 1.0 if t >= 1 else 1 - 2 ** (-10 * t)
+
+
+def ease_out_quint(t):
+    t = clamp(t)
+    return 1 - (1 - t) ** 5
+
+
+def anticipate(t, s=1.9):
+    """slight pull-back then snap forward"""
+    t = clamp(t) - 1
+    return 1 + (s + 1) * t ** 3 + s * t ** 2
+
+
+def pop(t, start=0.0, dur=0.5):
+    """0 -> overshoot -> 1 scale factor"""
+    p = seg(t, start, dur)
+    if p <= 0:
+        return 0.0
+    if p >= 1:
+        return 1.0
+    return ease_out_back(p, 2.4)
+
+
+def grad_text(x, y, s, size, weight=800, c0=MINT, c1=CYAN, phase=0.5, spread=1.1,
+              opacity=1.0, anchor="start", glow=None):
+    """Headline text filled with an animated two-colour gradient band."""
+    gid = "gt%d_%d" % (int(abs(x)), int(size * 10))
+    w = display_width(s, size, weight)
+    x1 = x - w * (1 - phase) * 0.5 - w * 0.35
+    x2 = x1 + w * spread
+    if anchor == "middle":
+        tx = x - w / 2
+    elif anchor == "end":
+        tx = x - w
+    else:
+        tx = x
+    defs = ('<defs><linearGradient id="%s" gradientUnits="userSpaceOnUse" '
+            'x1="%.1f" y1="0" x2="%.1f" y2="0">'
+            '<stop offset="0%%" stop-color="%s"/><stop offset="48%%" stop-color="%s"/>'
+            '<stop offset="52%%" stop-color="%s"/><stop offset="100%%" stop-color="%s"/>'
+            '</linearGradient></defs>' % (gid, x1, x2, c0, c1, c1, c0))
+    body = ""
+    if glow:
+        body += '<g opacity="%.2f" style="filter:none">%s</g>' % (
+            glow, text(tx, y + 3, s, size + 2, weight, c1, opacity=opacity * 0.35))
+    body += text(tx, y, s, size, weight, "url(#%s)" % gid, opacity=opacity)
+    return defs + body
+
+
+def particles(t, n=54, seed=7, colors=None, x0=0, x1=1920, y0=0, y1=1080,
+              speed=1.0, size=(1.2, 3.4), opacity=0.5, drift=16):
+    import random
+    colors = colors or [MINT, CYAN, VIOLET, "#FFFFFF"]
+    rnd = random.Random(seed)
+    out = []
+    span = y1 - y0 + 120
+    for i in range(n):
+        px = rnd.uniform(x0, x1)
+        py = rnd.uniform(y0, y1)
+        r = rnd.uniform(*size)
+        ph = rnd.uniform(0, 6.28)
+        sp = rnd.uniform(10, 34) * speed
+        yy = y0 - 60 + ((py - y0 + t * sp) % span)
+        xx = px + math.sin(t * 0.45 + ph) * drift
+        o = opacity * (0.35 + 0.65 * (0.5 + 0.5 * math.sin(t * 1.1 + ph)))
+        c = colors[i % len(colors)]
+        out.append(circle(xx, yy, r, c, o))
+    return "".join(out)
+
+
+def bokeh(t, n=9, seed=3):
+    """slow drifting out-of-focus rings for depth"""
+    import random
+    rnd = random.Random(seed)
+    out = []
+    for i in range(n):
+        bx = rnd.uniform(80, 1840)
+        by = rnd.uniform(60, 1020)
+        r = rnd.uniform(40, 130)
+        ph = rnd.uniform(0, 6.28)
+        dx = math.sin(t * 0.25 + ph) * 40
+        dy = math.cos(t * 0.2 + ph) * 30
+        o = 0.05 + 0.03 * math.sin(t * 0.5 + ph)
+        out.append(circle(bx + dx, by + dy, r, "none", abs(o),
+                          extra='stroke="%s" stroke-width="1.4"' % (
+                              [MINT, CYAN, VIOLET][i % 3])))
+    return "".join(out)
+
+
+def dot_grid(cols=24, rows=14, color="#7E8FAB", r=1.6, opacity=0.10, t=0.0):
+    out = []
+    for ix in range(cols):
+        for iy in range(rows):
+            x = 40 + ix * (1840 / (cols - 1))
+            y = 40 + iy * (1000 / (rows - 1))
+            tw = 0.6 + 0.4 * math.sin(t * 1.4 + ix * 0.4 + iy * 0.3)
+            out.append(circle(x, y, r, color, opacity * tw))
+    return "".join(out)
+
+
+def glow_orb(x, y, r, t, color_mint=True, opacity=0.5):
+    name = "glow_mint.png" if color_mint else "glow_violet.png"
+    return image(name, x - r, y - r, r * 2, r * 2, opacity)
+
+
+def pulse_ring(cx, cy, r0, r1, t, period=1.6, color=MINT, width=2.0, opacity=0.6):
+    """expanding ring, loops"""
+    ph = (t % period) / period
+    r = lerp(r0, r1, ease_out(ph))
+    o = opacity * (1 - ph)
+    return circle(cx, cy, r, "none", o,
+                  extra='stroke="%s" stroke-width="%.1f"' % (color, width))
+
+
+def sweep_underline(x, y, w, p, color=MINT, width=5):
+    return line(x, y, x + w * ease_out_expo(p), y, color, width, 1.0)
+
+
+def underline_glow(x, y, w, p, color=MINT):
+    return (line(x, y, x + w * ease_out_expo(p), y, color, 5, 0.95) +
+            line(x, y + 6, x + w * ease_out_expo(p) * 0.92, y + 6, color, 14, 0.10))
+
+
+def arrow(x, y, length, p, color=MINT, width=9):
+    """horizontal arrow that draws itself"""
+    p = ease_out_expo(p)
+    tip = x + length * p
+    if p <= 0.01:
+        return ""
+    return (line(x, y, max(x, tip - 8), y, color, width, 1.0) +
+            path("M %.1f %.1f L %.1f %.1f L %.1f %.1f" % (
+                tip - 26, y - 19, tip, y, tip - 26, y + 19),
+                stroke=color, width=width))
+
+
+def counter(value, decimals=0, bn=True, group=True):
+    """number -> Bangla numerals (with thousands separators) when bn"""
+    raw = ("%%.%df" % decimals) % value
+    if group:
+        whole, _, frac = raw.partition(".")
+        whole = "{:,}".format(int(whole)) if whole.lstrip("-").isdigit() else whole
+        raw = whole + ("." + frac if frac else "")
+    if bn:
+        digits = "০১২৩৪৫৬৭৮৯"
+        return "".join(digits[int(c)] if c.isdigit() else c for c in raw)
+    return raw
+
+
+def typed(s, p):
+    """typewriter helper: returns visible substring"""
+    n = int(round(len(s) * clamp(p)))
+    return s[:n]
+
+
+def card_shadow(x, y, w, h, rx=28, opacity=0.35):
+    return rect(x, y + 14, w, h, "#000000", rx=rx, opacity=opacity)
+
+
+def tilt_card(x, y, w, h, skew, prefix="d", opacity=1.0, stroke="#2A3A57", rx=28):
+    """card with a slight 3D-ish horizontal squash used on entry"""
+    return ('<g transform="translate(%.2f,%.2f) scale(%.4f,1) translate(%.2f,%.2f)">%s</g>'
+            % (x + w / 2, y, max(0.02, skew), -(x + w / 2), -y,
+               card(x, y, w, h, prefix, opacity, stroke, rx)))
+
+
+# ------------------------------------------------------------ chrome / fit --
+GLOBAL_PROGRESS = None  # 0..1, set by the renderer for the progress bar
+
+
+def chrome(t):
+    """Persistent top accent line + subtle progress bar (brand furniture)."""
+    out = [rect(0, 0, 1920, 3, "url(#dmint)", opacity=0.55)]
+    if GLOBAL_PROGRESS is not None:
+        out.append(rect(0, 0, 1920 * GLOBAL_PROGRESS, 3, "url(#dmint)", opacity=0.95))
+    return "".join(out)
+
+
+def shine(x, y, w, h, t, period=3.2, opacity=0.14, skew=90):
+    """diagonal light sweep across a rectangle region"""
+    ph = (t % period) / period
+    if ph > 0.6:
+        return ""
+    p = ease_in_out(ph / 0.6)
+    cx = x - w * 0.4 + (w * 1.8) * p
+    return ('<g opacity="%.3f"><rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" '
+            'fill="#FFFFFF" transform="translate(%.1f,%.1f) skewX(-18) translate(%.1f,%.1f)" '
+            'opacity="0.5"/></g>' % (opacity, cx, y, w * 0.10, h, 0, 0, 0, 0))
+
+
+def fit_size(text_s, max_w, sizes, weight=900):
+    """largest size from `sizes` whose ink width fits max_w"""
+    for s in sizes:
+        if display_width(text_s, s, weight) <= max_w:
+            return s
+    return sizes[-1]
+
+
+def stars(cx, cy, n, r, color=AMBER, p=1.0):
+    out = []
+    gap = r * 2.5
+    x0 = cx - (n - 1) * gap / 2
+    for i in range(n):
+        pp = ease_out_back(seg(p, i * 0.12, 0.4), 2.0) if p < 1 else 1.0
+        if pp <= 0:
+            continue
+        cxx = x0 + i * gap
+        pts = []
+        for k in range(10):
+            ang = -math.pi / 2 + k * math.pi / 5
+            rr = r * pp if k % 2 == 0 else r * 0.42 * pp
+            pts.append("%.2f,%.2f" % (cxx + math.cos(ang) * rr, cy + math.sin(ang) * rr))
+        out.append('<polygon points="%s" fill="%s" opacity="%.2f"/>' % (
+            " ".join(pts), color, clamp(pp * 1.4)))
+    return "".join(out)
+
+
+def sparkle(cx, cy, s, p=1.0, color="#FFFFFF", opacity=1.0):
+    """four-point twinkle"""
+    if p <= 0:
+        return ""
+    e = ease_out_back(p, 2.0)
+    k = s * e
+    return path("M %.1f %.1f Q %.1f %.1f %.1f %.1f Q %.1f %.1f %.1f %.1f "
+                "Q %.1f %.1f %.1f %.1f Q %.1f %.1f %.1f %.1f Z" % (
+                    cx, cy - k, cx + k * 0.14, cy - k * 0.14, cx + k, cy,
+                    cx + k * 0.14, cy + k * 0.14, cx, cy + k,
+                    cx - k * 0.14, cy + k * 0.14, cx - k, cy,
+                    cx - k * 0.14, cy - k * 0.14, cx, cy - k),
+                fill=color, opacity=opacity)
